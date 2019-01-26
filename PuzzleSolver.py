@@ -1,79 +1,54 @@
 import queue
+import utils
 
 
 class PuzzleSolver:
     # TODO Add documentation for history of problems in the project and their solutions??
 
-    def __init__(self, puzzle, logs):
+    def __init__(self, p):
         """
         Takes in a Puzzle object to solve and logs all moves made by the solver.
 
-        :param puzzle: Instance of puzzle class to be solved.
-        :param logs: Text file in which the steps to solve puzzle are kept track in.
+        :param p: Instance of puzzle class to be solved.
         """
 
-        self.puzzle = puzzle
-        self.logs = logs
-
-        self.file = open(self.logs, "a")
-        self.update_logs()
+        self.p = p
 
     @staticmethod
-    def opposite_direction(direction):
-        """
-        :param direction: String in {"left", "right", "up", "down"}.
-        :return: The opposite direction of the parameter.
-        """
-        if direction == 'left':
-            s = 'right'
-        elif direction == 'right':
-            s = 'left'
-        elif direction == 'up':
-            s = 'down'
-        else:
-            s = 'up'
-        return s
+    def reconstruct_path(came_from, current):
+        total_path = [current]
+        while current in came_from.keys():
+            current = came_from[current]
+            total_path.append(current)
+        return total_path
 
-    def update_logs(self):
-        """
-        Prints to self.file information on what the solver is doing.
-        :return: VOID
-        """
-        self.file.write(str(self.puzzle))
-        self.file.write("\n\n")
+    def a_star(self):
+        open_set = {self.p}
+        closed_set = set()
+        came_from = dict()
+        g_score = {self.p: 0}
+        f_score = {self.p: self.p.heuristic}
 
-    def optimal_move(self):
-        """
-        :return: The next most optimal move to solve the puzzle.
-        """
-        # TODO Add feature that doesn't allow moves to be repeated
-        # Priority queue of tuples (heuristic, move).
-        # Highest priority is the minimum heuristic, or the min first element of each tuple.
-        q = queue.PriorityQueue()
-        for direction in self.puzzle.available_moves():
-            self.puzzle.update_board(direction)
-            q.put((self.puzzle.heuristic, direction))
-            self.puzzle.update_board(self.opposite_direction(direction))
+        while len(open_set) > 0:
+            # current = utils.a_star_helper(open_set, f_score)
+            current = min(open_set, key=lambda puzzle: puzzle.heuristic)
+            if current.heuristic == 0:
+                return self.reconstruct_path(came_from, current)
 
-        return q.get()[1]
+            open_set.remove(current)
+            closed_set.add(current)
 
-    def solve(self):
-        """
-        Solves the 15 Puzzle configuration.
-        :return: VOID
-        """
-        # TODO Implementation where puzzle doesn't need to update to find optimal move (efficiency)
-        if self.puzzle.is_solvable():
-            steps = 0
-            while self.puzzle.heuristic > 0:
-                self.puzzle.update_board(self.optimal_move())
-                steps += 1
-                self.update_logs()
+            for neighbor in current.neighbors():
+                if neighbor in closed_set:
+                    continue
 
-            self.file.write("\n")
-            self.file.write("Puzzle solved with " + str(steps) + " steps.")
-        else:
-            self.file.write("Puzzle is not solvable.")
-            print("Puzzle configuration cannot be solved.")
+                tmp_g_score = g_score[current] + 1
 
-        self.file.close()
+                if neighbor not in open_set:
+                    open_set.add(neighbor)
+                elif tmp_g_score >= g_score[neighbor]:
+                    continue
+
+                came_from[neighbor] = current
+                g_score[neighbor] = tmp_g_score
+                f_score[neighbor] = g_score[neighbor] + neighbor.heuristic

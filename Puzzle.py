@@ -1,68 +1,45 @@
 class Puzzle:
 
-    def __init__(self, file):
+    def __init__(self, board):
         """
         Creates a representation of a 15-puzzle off of file
         """
-        self.file = file
-        file_reader = open(self.file, 'r')
-        board_rep = ""
+        self.board = board
 
-        for line in file_reader:
-            board_rep = line
-        file_reader.close()
-
-        self.tiles = board_rep.split(", ")
-        for i in range(len(self.tiles)):
-            self.tiles[i] = int(self.tiles[i])
-
-        # Initialize board representation
-        self.board = [
-                        [],
-                        [],
-                        [],
-                        []
-                        ]
-
-        index_counter = 0
-        for j in range(len(self.board)):
-            for i in range(len(self.board)):
-                # Change to something that doesnt change self.tiles for inversion
-                tile = self.tiles[index_counter]
-                if not tile:
-                    self.zeroCord = [j, i]
-                self.board[j].append(tile)
-                index_counter += 1
+        # Find the zero coordinate
+        for i in range(len(self.board)):
+            for j in range(len(self.board)):
+                if not self.board[i][j]:
+                    self.zeroCord = [i, j]
 
         self.heuristic = self.distance_heuristic()
-
-    def __eq__(self, obj):
-        return isinstance(obj, Puzzle) and obj.board == self.board
 
     def __str__(self):
         """
         Displays 15-Puzzle in a tabular format of a 4x4 board
         """
         # Rows
-        i = 0
         puzzle = ""
-        while i < len(self.board):
-            # Columns
-            j = 0
-            while j < 4:
+        for i in range(len(self.board)):
+            for j in range(len(self.board)):
                 tile = self.board[i][j]
-
                 # If the tile is 0 (the representation of empty tile)
                 # Make sure that empty string is printed rather than 0
                 if tile:
                     puzzle += str(tile) + "\t"
                 else:
                     puzzle += " " + "\t"
-                j += 1
             puzzle += "\n"
-            i += 1
-
         return puzzle
+
+    def __eq__(self, obj):
+        return isinstance(obj, Puzzle) and obj.board == self.board
+
+    def __ne__(self, obj):
+        return not isinstance(obj, Puzzle) or obj.board != self.board
+
+    def __hash__(self):
+        return hash(self.__str__())
 
     def number_of_inversions(self):
         """
@@ -71,11 +48,15 @@ class Puzzle:
         An inversion is a pair of tiles (a,b) such that a appears before b, but a > b.
         """
         inversions = 0
+        tiles = []
+        for row in self.board:
+            for column in row:
+                tiles.append(column)
 
         # Can't check last index because no index after it.
-        for i in range(len(self.tiles) - 1):
-            for j in range(i + 1, len(self.tiles)):
-                if self.tiles[i] and self.tiles[j] and self.tiles[i] > self.tiles[j]:
+        for i in range(len(tiles) - 1):
+            for j in range(i + 1, len(tiles)):
+                if tiles[i] and tiles[j] and tiles[i] > tiles[j]:
                     inversions += 1
         return inversions
 
@@ -134,6 +115,26 @@ class Puzzle:
 
         self.heuristic = self.distance_heuristic()
 
+    def get_updated_configuration(self, direction):
+        """
+        :param direction: Direction on set {"up", "down", "left", "right"} to which the 0 will go.
+        :return: Returns a new Puzzle of the current configuration after moving in direction.
+        """
+        board_copy = [
+            [],
+            [],
+            [],
+            []
+        ]
+
+        for i in range(len(self.board)):
+            for j in range(len(self.board)):
+                board_copy[i].append(self.board[i][j])
+
+        new_puzzle = Puzzle(board_copy)
+        new_puzzle.update_board(direction)
+        return new_puzzle
+
     def available_moves(self):
         """
         Determines which directions the empty tile may be moved.
@@ -152,3 +153,7 @@ class Puzzle:
         elif zero_column == 3:
             moves.remove("right")
         return moves
+
+    def neighbors(self):
+        for move in self.available_moves():
+            yield self.get_updated_configuration(move)

@@ -2,7 +2,7 @@ from Puzzle import Puzzle
 from PuzzleSolver import PuzzleSolver
 import utils
 
-file = "data/board3.txt"
+file = "data/board2.txt"
 p = Puzzle(utils.board_from_file(file))
 logs = open("data/test.txt", "a")
 solver = PuzzleSolver(p)

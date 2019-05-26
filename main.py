@@ -15,6 +15,7 @@ if y == 'y' and p.is_solvable():
         logs.write(str(s))
         logs.write("\n\n")
     logs.write("Puzzle solved with " + str(len(solution)) + " steps.")
+    logs.close()
     print("Puzzle solved.")
 elif y != 'y':
     print("Solver quit.")
